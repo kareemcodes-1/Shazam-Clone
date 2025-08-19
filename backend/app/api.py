@@ -22,9 +22,12 @@ load_dotenv()
 
 app = FastAPI()
 
+FRONTEND_URL = os.getenv("FRONTEND_URL")
+FRONTEND_PATH = os.getenv("FRONTEND_PATH")
+
 origins = [
-    "http://localhost:5173",
-    "localhost:5173"
+    FRONTEND_URL,
+    FRONTEND_PATH
 ]
 
 app.add_middleware(
@@ -35,6 +38,7 @@ app.add_middleware(
 )
 
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
+
 MONGO_URI = os.getenv("MONGO_URI")
 SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
