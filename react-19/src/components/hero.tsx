@@ -50,7 +50,7 @@ const [, setAudioURL] = useState<string | null>(null);
     }
 
     try {
-      const res = await fetch("http://localhost:8000/add-song", {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/add-song`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ spotify_url: spotifyUrl }),
@@ -88,7 +88,7 @@ const [, setAudioURL] = useState<string | null>(null);
   const formData = new FormData();
   formData.append("file", blob, "audio.wav");
 
-  const res = await fetch("http://localhost:8000/audio/recognize", {
+  const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/audio/recognize`, {
     method: "POST",
     body: formData,
   });
