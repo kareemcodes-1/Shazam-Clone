@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef} from "react";
 import { useFormStatus } from "react-dom";
 import toast from "react-hot-toast";
 import OrbitProgress from "react-loading-indicators/OrbitProgress";
@@ -38,7 +38,7 @@ const Hero = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
 const [songData, setSongData] = useState<Song | null>(null);
-const [audioURL, setAudioURL] = useState<string | null>(null);
+const [, setAudioURL] = useState<string | null>(null);
 
 
 
