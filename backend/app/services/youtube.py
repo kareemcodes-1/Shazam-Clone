@@ -1,21 +1,26 @@
 import os
+import shutil
 from typing import Optional, Tuple
 from yt_dlp import YoutubeDL
 from yt_dlp.utils import match_filter_func
 
-# 1. Default to Render secret file if available
+# Always use a writable cookies.txt in current directory
 DEFAULT_SECRET_PATH = "/etc/secrets/cookies.txt"
 COOKIES_PATH = None
 
 if os.path.exists(DEFAULT_SECRET_PATH):
-    COOKIES_PATH = DEFAULT_SECRET_PATH
+    # Copy secret file to a local writable location
+    COOKIES_PATH = "cookies.txt"
+    shutil.copy(DEFAULT_SECRET_PATH, COOKIES_PATH)
+
 elif os.getenv("YOUTUBE_COOKIES_CONTENT"):
-    # 2. Write env var cookies content to a local file
+    # Write env var cookies content to a local file
     COOKIES_PATH = "cookies.txt"
     with open(COOKIES_PATH, "w", encoding="utf-8") as f:
         f.write(os.getenv("YOUTUBE_COOKIES_CONTENT"))
+
 elif os.path.exists("cookies.txt"):
-    # 3. Local fallback
+    # Local fallback
     COOKIES_PATH = "cookies.txt"
 
 
