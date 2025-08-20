@@ -6,12 +6,15 @@ DEFAULT_SECRET_PATH = "/etc/secrets/cookies.txt"
 TMP_COOKIES_PATH = "/tmp/cookies.txt"  # writable on Render
 COOKIES_PATH = None
 
+# Always copy from /etc/secrets to /tmp so yt-dlp can use it safely
 if os.path.exists(DEFAULT_SECRET_PATH):
-    COOKIES_PATH = DEFAULT_SECRET_PATH
-elif os.getenv("YOUTUBE_COOKIES_CONTENT"):
     COOKIES_PATH = TMP_COOKIES_PATH
-    with open(COOKIES_PATH, "w", encoding="utf-8") as f:
-        f.write(os.getenv("YOUTUBE_COOKIES_CONTENT"))
+    try:
+        with open(DEFAULT_SECRET_PATH, "r", encoding="utf-8") as src, \
+             open(COOKIES_PATH, "w", encoding="utf-8") as dst:
+            dst.write(src.read())
+    except Exception as e:
+        print(f"[yt-dlp] Failed to copy cookies: {e}")
 elif os.path.exists("cookies.txt"):
     COOKIES_PATH = "cookies.txt"
 
