@@ -3,14 +3,21 @@ from typing import Optional, Tuple
 from yt_dlp import YoutubeDL
 from yt_dlp.utils import match_filter_func
 
-# Path where cookies file will be stored (default: cookies.txt)
-COOKIES_PATH = os.getenv("YOUTUBE_COOKIES", "cookies.txt")
+# 1. Default to Render secret file if available
+DEFAULT_SECRET_PATH = "/etc/secrets/cookies.txt"
+COOKIES_PATH = None
 
-# If cookie content is passed via env var, write it to file
-cookie_content = os.getenv("YOUTUBE_COOKIES_CONTENT")
-if cookie_content:
+if os.path.exists(DEFAULT_SECRET_PATH):
+    COOKIES_PATH = DEFAULT_SECRET_PATH
+elif os.getenv("YOUTUBE_COOKIES_CONTENT"):
+    # 2. Write env var cookies content to a local file
+    COOKIES_PATH = "cookies.txt"
     with open(COOKIES_PATH, "w", encoding="utf-8") as f:
-        f.write(cookie_content)
+        f.write(os.getenv("YOUTUBE_COOKIES_CONTENT"))
+elif os.path.exists("cookies.txt"):
+    # 3. Local fallback
+    COOKIES_PATH = "cookies.txt"
+
 
 def build_search_query(title: str, artist: str, album: Optional[str] = None) -> str:
     parts = [title, artist]
@@ -19,13 +26,17 @@ def build_search_query(title: str, artist: str, album: Optional[str] = None) -> 
     parts.append("audio")
     return " ".join(p for p in parts if p)
 
+
 def search_youtube_one(query: str) -> Optional[str]:
     ydl_opts = {
         "quiet": True,
         "skip_download": True,
         "no_warnings": True,
-        "cookiefile": COOKIES_PATH,  # ✅ will use env or secret file
     }
+
+    if COOKIES_PATH:
+        ydl_opts["cookiefile"] = COOKIES_PATH
+
     try:
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(f"ytsearch1:{query}", download=False)
@@ -34,6 +45,7 @@ def search_youtube_one(query: str) -> Optional[str]:
     except Exception as e:
         print(f"[YouTube Search Error] {e}")
     return None
+
 
 def download_best_audio(
     youtube_url: str,
@@ -46,15 +58,17 @@ def download_best_audio(
         "format": "bestaudio[ext=m4a]/bestaudio/best",
         "outtmpl": os.path.join(out_dir, "%(id)s.%(ext)s"),
         "quiet": True,
-        "cookiefile": COOKIES_PATH,  # ✅ will use env or secret file
         "postprocessors": [
             {"key": "FFmpegExtractAudio", "preferredcodec": "m4a"},
         ],
     }
 
+    if COOKIES_PATH:
+        ydl_opts["cookiefile"] = COOKIES_PATH
+
     # Enable duration filtering if needed
-    if max_duration_sec is not None:
-        ydl_opts["match_filter"] = match_filter_func(f"duration <= {max_duration_sec}")
+    # if max_duration_sec is not None:
+    #     ydl_opts["match_filter"] = match_filter_func(f"duration <= {max_duration_sec}")
 
     with YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(youtube_url, download=True)
