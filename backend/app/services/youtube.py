@@ -1,22 +1,21 @@
 import os
-import shutil
 from typing import Optional, Tuple
 from yt_dlp import YoutubeDL
-from yt_dlp.utils import match_filter_func
 
 DEFAULT_SECRET_PATH = "/etc/secrets/cookies.txt"
+TMP_COOKIES_PATH = "/tmp/cookies.txt"  # writable on Render
 COOKIES_PATH = None
 
 if os.path.exists(DEFAULT_SECRET_PATH):
     COOKIES_PATH = DEFAULT_SECRET_PATH
 elif os.getenv("YOUTUBE_COOKIES_CONTENT"):
-    COOKIES_PATH = "cookies.txt"
+    COOKIES_PATH = TMP_COOKIES_PATH
     with open(COOKIES_PATH, "w", encoding="utf-8") as f:
         f.write(os.getenv("YOUTUBE_COOKIES_CONTENT"))
 elif os.path.exists("cookies.txt"):
     COOKIES_PATH = "cookies.txt"
 
-# Debugging - log what file is used
+# Debugging
 print(f"[yt-dlp] Using cookies: {COOKIES_PATH}")
 if COOKIES_PATH and os.path.exists(COOKIES_PATH):
     with open(COOKIES_PATH, "r", encoding="utf-8") as f:
@@ -24,7 +23,6 @@ if COOKIES_PATH and os.path.exists(COOKIES_PATH):
     print(f"[yt-dlp] First 5 lines of cookies file:\n{head}")
 else:
     print("[yt-dlp] No cookies file found")
-
 
 
 def build_search_query(title: str, artist: str, album: Optional[str] = None) -> str:
@@ -73,10 +71,6 @@ def download_best_audio(
 
     if COOKIES_PATH:
         ydl_opts["cookiefile"] = COOKIES_PATH
-
-    # Enable duration filtering if needed
-    # if max_duration_sec is not None:
-    #     ydl_opts["match_filter"] = match_filter_func(f"duration <= {max_duration_sec}")
 
     with YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(youtube_url, download=True)
