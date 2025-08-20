@@ -1,5 +1,8 @@
 import os
+import shutil
+from typing import Optional, Tuple
 from yt_dlp import YoutubeDL
+from yt_dlp.utils import match_filter_func
 
 DEFAULT_SECRET_PATH = "/etc/secrets/cookies.txt"
 COOKIES_PATH = None
