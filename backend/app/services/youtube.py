@@ -1,27 +1,27 @@
 import os
-import shutil
-from typing import Optional, Tuple
 from yt_dlp import YoutubeDL
-from yt_dlp.utils import match_filter_func
 
-# Always use a writable cookies.txt in current directory
 DEFAULT_SECRET_PATH = "/etc/secrets/cookies.txt"
 COOKIES_PATH = None
 
 if os.path.exists(DEFAULT_SECRET_PATH):
-    # Copy secret file to a local writable location
-    COOKIES_PATH = "cookies.txt"
-    shutil.copy(DEFAULT_SECRET_PATH, COOKIES_PATH)
-
+    COOKIES_PATH = DEFAULT_SECRET_PATH
 elif os.getenv("YOUTUBE_COOKIES_CONTENT"):
-    # Write env var cookies content to a local file
     COOKIES_PATH = "cookies.txt"
     with open(COOKIES_PATH, "w", encoding="utf-8") as f:
         f.write(os.getenv("YOUTUBE_COOKIES_CONTENT"))
-
 elif os.path.exists("cookies.txt"):
-    # Local fallback
     COOKIES_PATH = "cookies.txt"
+
+# Debugging - log what file is used
+print(f"[yt-dlp] Using cookies: {COOKIES_PATH}")
+if COOKIES_PATH and os.path.exists(COOKIES_PATH):
+    with open(COOKIES_PATH, "r", encoding="utf-8") as f:
+        head = "".join(f.readlines()[:5])
+    print(f"[yt-dlp] First 5 lines of cookies file:\n{head}")
+else:
+    print("[yt-dlp] No cookies file found")
+
 
 
 def build_search_query(title: str, artist: str, album: Optional[str] = None) -> str:
