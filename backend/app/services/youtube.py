@@ -3,13 +3,14 @@ from typing import Optional, Tuple
 from yt_dlp import YoutubeDL
 from yt_dlp.utils import match_filter_func
 
-# Path where cookies file will be stored
+# Path where cookies file will be stored (default: cookies.txt)
 COOKIES_PATH = os.getenv("YOUTUBE_COOKIES", "cookies.txt")
 
 # If cookie content is passed via env var, write it to file
-if os.getenv("YOUTUBE_COOKIES_CONTENT"):
+cookie_content = os.getenv("YOUTUBE_COOKIES_CONTENT")
+if cookie_content:
     with open(COOKIES_PATH, "w", encoding="utf-8") as f:
-        f.write(os.getenv("YOUTUBE_COOKIES_CONTENT"))
+        f.write(cookie_content)
 
 def build_search_query(title: str, artist: str, album: Optional[str] = None) -> str:
     parts = [title, artist]
@@ -23,7 +24,7 @@ def search_youtube_one(query: str) -> Optional[str]:
         "quiet": True,
         "skip_download": True,
         "no_warnings": True,
-        "cookiefile": COOKIES_PATH,  # ✅ will use file created above
+        "cookiefile": COOKIES_PATH,  # ✅ will use env or secret file
     }
     try:
         with YoutubeDL(ydl_opts) as ydl:
@@ -45,15 +46,15 @@ def download_best_audio(
         "format": "bestaudio[ext=m4a]/bestaudio/best",
         "outtmpl": os.path.join(out_dir, "%(id)s.%(ext)s"),
         "quiet": True,
-        "cookiefile": COOKIES_PATH,  # ✅ will use file created above
+        "cookiefile": COOKIES_PATH,  # ✅ will use env or secret file
         "postprocessors": [
             {"key": "FFmpegExtractAudio", "preferredcodec": "m4a"},
         ],
     }
 
     # Enable duration filtering if needed
-    # if max_duration_sec is not None:
-    #     ydl_opts["match_filter"] = match_filter_func(f"duration <= {max_duration_sec}")
+    if max_duration_sec is not None:
+        ydl_opts["match_filter"] = match_filter_func(f"duration <= {max_duration_sec}")
 
     with YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(youtube_url, download=True)
