@@ -3,8 +3,13 @@ from typing import Optional, Tuple
 from yt_dlp import YoutubeDL
 from yt_dlp.utils import match_filter_func
 
-# Load from env var or default to "cookies.txt"
+# Path where cookies file will be stored
 COOKIES_PATH = os.getenv("YOUTUBE_COOKIES", "cookies.txt")
+
+# If cookie content is passed via env var, write it to file
+if os.getenv("YOUTUBE_COOKIES_CONTENT"):
+    with open(COOKIES_PATH, "w", encoding="utf-8") as f:
+        f.write(os.getenv("YOUTUBE_COOKIES_CONTENT"))
 
 def build_search_query(title: str, artist: str, album: Optional[str] = None) -> str:
     parts = [title, artist]
@@ -18,7 +23,7 @@ def search_youtube_one(query: str) -> Optional[str]:
         "quiet": True,
         "skip_download": True,
         "no_warnings": True,
-        "cookiefile": COOKIES_PATH,  # ✅ correct key
+        "cookiefile": COOKIES_PATH,  # ✅ will use file created above
     }
     try:
         with YoutubeDL(ydl_opts) as ydl:
@@ -29,14 +34,18 @@ def search_youtube_one(query: str) -> Optional[str]:
         print(f"[YouTube Search Error] {e}")
     return None
 
-def download_best_audio(youtube_url: str, out_dir: str, max_duration_sec: Optional[int] = None) -> Tuple[str, dict]:
+def download_best_audio(
+    youtube_url: str,
+    out_dir: str,
+    max_duration_sec: Optional[int] = None
+) -> Tuple[str, dict]:
     os.makedirs(out_dir, exist_ok=True)
 
     ydl_opts = {
         "format": "bestaudio[ext=m4a]/bestaudio/best",
         "outtmpl": os.path.join(out_dir, "%(id)s.%(ext)s"),
         "quiet": True,
-        "cookiefile": COOKIES_PATH,  # ✅ correct key
+        "cookiefile": COOKIES_PATH,  # ✅ will use file created above
         "postprocessors": [
             {"key": "FFmpegExtractAudio", "preferredcodec": "m4a"},
         ],
