@@ -1,41 +1,6 @@
 import os
 from typing import Optional, Tuple
-from yt_dlp import YoutubeDL
-
-DEFAULT_SECRET_PATH = "/etc/secrets/cookies.txt"
-TMP_COOKIES_PATH = "/tmp/cookies.txt"  # writable on Render
-COOKIES_PATH = None
-
-# Always copy from /etc/secrets to /tmp so yt-dlp can use it safely
-if os.path.exists(DEFAULT_SECRET_PATH):
-    COOKIES_PATH = TMP_COOKIES_PATH
-    try:
-        with open(DEFAULT_SECRET_PATH, "r", encoding="utf-8") as src, \
-             open(COOKIES_PATH, "w", encoding="utf-8") as dst:
-            dst.write(src.read())
-    except Exception as e:
-        print(f"[yt-dlp] Failed to copy cookies: {e}")
-elif os.path.exists("cookies.txt"):
-    COOKIES_PATH = "cookies.txt"
-
-# Debugging
-print(f"[yt-dlp] Using cookies: {COOKIES_PATH}")
-if COOKIES_PATH and os.path.exists(COOKIES_PATH):
-    with open(COOKIES_PATH, "r", encoding="utf-8") as f:
-        head = "".join(f.readlines()[:5])
-    print(f"[yt-dlp] First 5 lines of cookies file:\n{head}")
-else:
-    print("[yt-dlp] No cookies file found")
-
-# Common headers (User-Agent especially!)
-COMMON_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/139.0.0.0 Safari/537.36"
-    ),
-    "Accept-Language": "en-US,en;q=0.9",
-}
+from pytube import YouTube, Search
 
 
 def build_search_query(title: str, artist: str, album: Optional[str] = None) -> str:
@@ -47,23 +12,14 @@ def build_search_query(title: str, artist: str, album: Optional[str] = None) -> 
 
 
 def search_youtube_one(query: str) -> Optional[str]:
-    ydl_opts = {
-        "quiet": True,
-        "skip_download": True,
-        "no_warnings": True,
-        "http_headers": COMMON_HEADERS,
-    }
-
-    if COOKIES_PATH:
-        ydl_opts["cookiefile"] = COOKIES_PATH
-
+    """Search YouTube using pytube and return the first video URL."""
     try:
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(f"ytsearch1:{query}", download=False)
-            if "entries" in info and info["entries"]:
-                return info["entries"][0]["webpage_url"]
+        s = Search(query)
+        results = s.results
+        if results:
+            return results[0].watch_url
     except Exception as e:
-        print(f"[YouTube Search Error] {e}")
+        print(f"[Pytube Search Error] {e}")
     return None
 
 
@@ -72,24 +28,25 @@ def download_best_audio(
     out_dir: str,
     max_duration_sec: Optional[int] = None
 ) -> Tuple[str, dict]:
+    """Download the best available audio using pytube."""
     os.makedirs(out_dir, exist_ok=True)
 
-    ydl_opts = {
-        "format": "bestaudio[ext=m4a]/bestaudio/best",
-        "outtmpl": os.path.join(out_dir, "%(id)s.%(ext)s"),
-        "quiet": True,
-        "http_headers": COMMON_HEADERS,
-        "postprocessors": [
-            {"key": "FFmpegExtractAudio", "preferredcodec": "m4a"},
-        ],
+    yt = YouTube(youtube_url)
+    # Optional: check duration if max_duration_sec is provided
+    if max_duration_sec and yt.length > max_duration_sec:
+        raise ValueError(f"Video is too long ({yt.length}s > {max_duration_sec}s)")
+
+    stream = yt.streams.filter(only_audio=True, file_extension="mp4").order_by("abr").desc().first()
+    if not stream:
+        raise RuntimeError("No suitable audio stream found")
+
+    out_path = stream.download(output_path=out_dir, filename=f"{yt.video_id}.mp4")
+
+    return out_path, {
+        "title": yt.title,
+        "author": yt.author,
+        "length": yt.length,
+        "views": yt.views,
+        "video_id": yt.video_id,
+        "watch_url": yt.watch_url,
     }
-
-    if COOKIES_PATH:
-        ydl_opts["cookiefile"] = COOKIES_PATH
-
-    with YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(youtube_url, download=True)
-        vid_id = info.get("id")
-        m4a_path = os.path.join(out_dir, f"{vid_id}.m4a")
-        final_path = m4a_path if os.path.exists(m4a_path) else ydl.prepare_filename(info)
-        return final_path, info

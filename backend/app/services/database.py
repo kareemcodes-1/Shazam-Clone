@@ -12,13 +12,14 @@ class MongoDatabase:
         self.songs = self.db["songs"]
 
     def save_song(
-        self,
-        meta: Dict[str, Any],
-        audio_path: str,
-        youtube_url: str,
-         fingerprint: list[int],
-        content_type: str = "audio/m4a",
-    ) -> str:
+    self,
+    meta: Dict[str, Any],
+    audio_path: str,
+    youtube_url: str,
+    fingerprint: list[int],
+    content_type: str = "audio/mp4",  # changed from m4a → mp4
+) -> str:
+
 
         # Store audio in GridFS
         with open(audio_path, "rb") as f:
