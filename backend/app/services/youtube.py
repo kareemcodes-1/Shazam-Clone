@@ -27,6 +27,16 @@ if COOKIES_PATH and os.path.exists(COOKIES_PATH):
 else:
     print("[yt-dlp] No cookies file found")
 
+# Common headers (User-Agent especially!)
+COMMON_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/139.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
 
 def build_search_query(title: str, artist: str, album: Optional[str] = None) -> str:
     parts = [title, artist]
@@ -41,6 +51,7 @@ def search_youtube_one(query: str) -> Optional[str]:
         "quiet": True,
         "skip_download": True,
         "no_warnings": True,
+        "http_headers": COMMON_HEADERS,
     }
 
     if COOKIES_PATH:
@@ -67,6 +78,7 @@ def download_best_audio(
         "format": "bestaudio[ext=m4a]/bestaudio/best",
         "outtmpl": os.path.join(out_dir, "%(id)s.%(ext)s"),
         "quiet": True,
+        "http_headers": COMMON_HEADERS,
         "postprocessors": [
             {"key": "FFmpegExtractAudio", "preferredcodec": "m4a"},
         ],
