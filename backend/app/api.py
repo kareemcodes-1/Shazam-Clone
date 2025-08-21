@@ -233,7 +233,7 @@ def add_song(body: AddSongIn):
             audio_path=audio_path,
             youtube_url=yt_url,
             fingerprint=fingerprint,
-            content_type="audio/m4a"
+            content_type="audio/mp4"
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"DB save error: {e}")
