@@ -1,6 +1,7 @@
 import os
 from typing import Optional, Tuple
-from pytube import YouTube, Search
+from pytube import YouTube
+import yt_dlp
 
 
 def build_search_query(title: str, artist: str, album: Optional[str] = None) -> str:
@@ -12,14 +13,15 @@ def build_search_query(title: str, artist: str, album: Optional[str] = None) -> 
 
 
 def search_youtube_one(query: str) -> Optional[str]:
-    """Search YouTube using pytube and return the first video URL."""
+    """Search YouTube using yt-dlp and return the first video URL."""
     try:
-        s = Search(query)
-        results = s.results
-        if results:
-            return results[0].watch_url
+        ydl_opts = {"quiet": True, "extract_flat": True}
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(f"ytsearch1:{query}", download=False)
+            if "entries" in info and len(info["entries"]) > 0:
+                return info["entries"][0]["url"]
     except Exception as e:
-        print(f"[Pytube Search Error] {e}")
+        print(f"[yt-dlp Search Error] {e}")
     return None
 
 
@@ -32,6 +34,7 @@ def download_best_audio(
     os.makedirs(out_dir, exist_ok=True)
 
     yt = YouTube(youtube_url)
+
     # Optional: check duration if max_duration_sec is provided
     if max_duration_sec and yt.length > max_duration_sec:
         raise ValueError(f"Video is too long ({yt.length}s > {max_duration_sec}s)")
