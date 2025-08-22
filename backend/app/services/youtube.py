@@ -3,10 +3,10 @@ from typing import Optional, Tuple
 from yt_dlp import YoutubeDL
 
 DEFAULT_SECRET_PATH = "/etc/secrets/cookies.txt"
-TMP_COOKIES_PATH = "/tmp/cookies.txt"  # writable on Render
+TMP_COOKIES_PATH = "/tmp/cookies.txt" 
 COOKIES_PATH = None
 
-# Always copy from /etc/secrets to /tmp so yt-dlp can use it safely
+
 if os.path.exists(DEFAULT_SECRET_PATH):
     COOKIES_PATH = TMP_COOKIES_PATH
     try:
